@@ -23,6 +23,7 @@ object TextureViewRenderSurface {
      * @param renderer Renderer which will be used to update the TextureView.
      * @return The inflated TextureView.
      */
+    @JvmStatic
     fun inflateWith(viewStub: ViewStub, renderer: OpenGLRenderer): TextureView {
         Log.d(TAG, "Inflating TextureView into view stub.")
         viewStub.layoutResource = R.layout.texture_view_render_surface

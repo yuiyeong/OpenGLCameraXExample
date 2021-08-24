@@ -32,9 +32,10 @@ class CustomPreview @JvmOverloads constructor(
     defStyle
 ), LifecycleObserver {
     private var lifecycleOwner: LifecycleOwner? = null
+    private val renderer: OpenGLRenderer by lazy { OpenGLRenderer() }
 
     private var viewFinderStub: ViewStub
-    private val renderer: OpenGLRenderer by lazy { OpenGLRenderer() }
+
     private val displayManager: DisplayManager by lazy { context.getSystemService(AppCompatActivity.DISPLAY_SERVICE) as DisplayManager }
     private val displayListener = object : DisplayManager.DisplayListener {
         override fun onDisplayAdded(displayId: Int) {}
@@ -52,6 +53,7 @@ class CustomPreview @JvmOverloads constructor(
     }
 
 
+    @JvmOverloads
     fun bind(lifecycleOwner: LifecycleOwner, isTextureView: Boolean = false) {
         lifecycleOwner.lifecycle.addObserver(this)
         this.lifecycleOwner = lifecycleOwner

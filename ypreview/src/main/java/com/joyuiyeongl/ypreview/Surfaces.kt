@@ -16,6 +16,7 @@ object Surfaces {
     /** @return One of 0, 90, 180, 270.
      */
     @RotationDegrees
+    @JvmStatic
     fun toSurfaceRotationDegrees(@RotationEnum rotationEnum: Int): Int {
         return when (rotationEnum) {
             Surface.ROTATION_0 -> ROTATION_0_DEG

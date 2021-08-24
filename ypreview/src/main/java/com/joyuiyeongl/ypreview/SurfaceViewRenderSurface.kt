@@ -32,6 +32,7 @@ object SurfaceViewRenderSurface {
      * @param renderer Renderer which will be used to update the SurfaceView.
      * @return The inflated SurfaceView.
      */
+    @JvmStatic
     fun inflateNonBlockingWith(
         viewStub: ViewStub,
         renderer: OpenGLRenderer
@@ -47,6 +48,7 @@ object SurfaceViewRenderSurface {
      * @param renderer Renderer which will be used to update the SurfaceView.
      * @return The inflated SurfaceView.
      */
+    @JvmStatic
     fun inflateWith(
         viewStub: ViewStub,
         renderer: OpenGLRenderer
@@ -54,6 +56,7 @@ object SurfaceViewRenderSurface {
         return inflateWith(viewStub, renderer,  /*nonBlocking=*/false)
     }
 
+    @JvmStatic
     private fun inflateWith(
         viewStub: ViewStub,
         renderer: OpenGLRenderer, nonBlocking: Boolean
@@ -121,6 +124,7 @@ object SurfaceViewRenderSurface {
         return surfaceView
     }
 
+    @JvmStatic
     private fun warnOnKnownBuggyNonBlockingDevice() {
         // Cuttlefish currently uses swiftshader for its OpenGL and EGL implementations.
         // Swiftshader is not thread-safe, and sometimes will crash in OpenGL or EGL calls if the
