@@ -14,8 +14,8 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.OpenGLCameraXExample">
         <activity
-            android:name=".OpenGLActivity"
-            android:exported="true" >
+            android:name=".CustomPreviewActivity"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -23,8 +23,11 @@
             </intent-filter>
         </activity>
         <activity
+            android:name=".OpenGLActivity"
+            android:exported="true" />
+        <activity
             android:name=".MainActivity"
-            android:exported="true"/>
+            android:exported="true" />
     </application>
 
 </manifest>

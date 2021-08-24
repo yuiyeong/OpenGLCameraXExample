@@ -1,14 +1,16 @@
 package com.joyuiyeongl.ypreview
 
+import android.Manifest
 import android.content.Context
-import android.os.Bundle
+import android.content.pm.PackageManager
+import android.hardware.display.DisplayManager
+import android.os.Build
 import android.util.AttributeSet
 import android.util.Log
 import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
 import android.view.ViewStub
 import android.widget.FrameLayout
+import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
@@ -18,7 +20,6 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.OnLifecycleEvent
-import java.util.*
 import java.util.concurrent.Executor
 
 class CustomPreview @JvmOverloads constructor(
@@ -30,79 +31,88 @@ class CustomPreview @JvmOverloads constructor(
     attrs,
     defStyle
 ), LifecycleObserver {
-    private val mRenderer: OpenGLRenderer by lazy { OpenGLRenderer() }
+    private var lifecycleOwner: LifecycleOwner? = null
+
+    private var viewFinderStub: ViewStub
+    private val renderer: OpenGLRenderer by lazy { OpenGLRenderer() }
+    private val displayManager: DisplayManager by lazy { context.getSystemService(AppCompatActivity.DISPLAY_SERVICE) as DisplayManager }
+    private val displayListener = object : DisplayManager.DisplayListener {
+        override fun onDisplayAdded(displayId: Int) {}
+        override fun onDisplayRemoved(displayId: Int) {}
+        override fun onDisplayChanged(displayId: Int) {
+            if (display != null && display.displayId == displayId) {
+                renderer.invalidateSurface(Surfaces.toSurfaceRotationDegrees(display.rotation))
+            }
+        }
+    }
 
     init {
         LayoutInflater.from(context).inflate(R.layout.custom_preview, this, true)
+        viewFinderStub = findViewById(R.id.viewFinderStub)
+    }
+
+
+    fun bind(lifecycleOwner: LifecycleOwner, isTextureView: Boolean = false) {
+        lifecycleOwner.lifecycle.addObserver(this)
+        this.lifecycleOwner = lifecycleOwner
+
+        when {
+            isTextureView -> TextureViewRenderSurface.inflateWith(viewFinderStub, renderer)
+            Build.MODEL.contains("Cuttlefish") -> SurfaceViewRenderSurface.inflateWith(viewFinderStub, renderer)
+            else -> SurfaceViewRenderSurface.inflateNonBlockingWith(viewFinderStub, renderer)
+        }
     }
 
     fun setFrameUpdateListener(executor: Executor, listener: Consumer<Long>) =
-        mRenderer.setFrameUpdateListener(executor, listener)
-
-    fun invalidateSurface(surfaceRotationDegrees: Int) =
-        mRenderer.invalidateSurface(surfaceRotationDegrees)
+        renderer.setFrameUpdateListener(executor, listener)
 
 
-    fun startCamera(lifecycleOwner: LifecycleOwner) {
-        val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
-        cameraProviderFuture.addListener({
-            val cameraProvider = cameraProviderFuture.get().also { it.unbindAll() }
+    fun startCamera() {
+        validateState()
 
-            val preview = Preview.Builder().build()
-            mRenderer.attachInputPreview(preview).addListener(
-                { Log.d(TAG, "OpenGLRenderer get the new surface for the Preview") },
-                ContextCompat.getMainExecutor(context)
-            )
-            cameraProvider.bindToLifecycle(
-                lifecycleOwner,
-                CameraSelector.DEFAULT_BACK_CAMERA,
-                preview
-            )
-        }, ContextCompat.getMainExecutor(context))
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+            val lifecycleOwner = lifecycleOwner ?: return
+            val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
+            cameraProviderFuture.addListener({
+                val cameraProvider = cameraProviderFuture.get().also { it.unbindAll() }
+
+                val preview = Preview.Builder().build()
+                renderer.attachInputPreview(preview).addListener(
+                    { Log.d(TAG, "OpenGLRenderer get the new surface for the Preview") },
+                    ContextCompat.getMainExecutor(context)
+                )
+                cameraProvider.bindToLifecycle(
+                    lifecycleOwner,
+                    CameraSelector.DEFAULT_BACK_CAMERA,
+                    preview
+                )
+            }, ContextCompat.getMainExecutor(context))
+        } else {
+            Log.w(TAG,"CAMERA Permission is NOT granted")
+        }
     }
 
+
+    @OnLifecycleEvent(Lifecycle.Event.ON_CREATE)
+    fun onOwnerCreate() {
+        displayManager.registerDisplayListener(displayListener, handler)
+    }
 
     @OnLifecycleEvent(Lifecycle.Event.ON_DESTROY)
     fun onOwnerDestroy() {
-        mRenderer.shutdown()
+        displayManager.unregisterDisplayListener(displayListener)
+
+        renderer.shutdown()
     }
+
+    private fun validateState(){
+        if (lifecycleOwner == null) {
+            throw IllegalStateException("If you want to start camera, bind this view to LifecycleOwner FIRST")
+        }
+    }
+
 
     companion object {
         private const val TAG = "CustomPreview"
-
-        const val RENDER_SURFACE_TYPE_TEXTUREVIEW = "textureview"
-        const val RENDER_SURFACE_TYPE_SURFACEVIEW = "surfaceview"
-        const val RENDER_SURFACE_TYPE_SURFACEVIEW_NONBLOCKING = "surfaceview_nonblocking"
-
-        private fun chooseViewFinder(
-            parent: ViewGroup,
-            renderer: OpenGLRenderer,
-            renderSurfaceType: String = RENDER_SURFACE_TYPE_TEXTUREVIEW
-        ): View {
-            return when (renderSurfaceType) {
-                RENDER_SURFACE_TYPE_TEXTUREVIEW -> {
-                    Log.d(TAG, "Using TextureView render surface.")
-                    TextureViewRenderSurface.inflateWith(parent, renderer)
-                }
-                RENDER_SURFACE_TYPE_SURFACEVIEW -> {
-                    Log.d(TAG, "Using SurfaceView render surface.")
-                    SurfaceViewRenderSurface.inflateWith(parent, renderer)
-                }
-                RENDER_SURFACE_TYPE_SURFACEVIEW_NONBLOCKING -> {
-                    Log.d(TAG, "Using SurfaceView (non-blocking) render surface.")
-                    SurfaceViewRenderSurface.inflateNonBlockingWith(parent, renderer)
-                }
-                else -> throw IllegalArgumentException(
-                    String.format(
-                        Locale.US,
-                        "Unknown render "
-                                + "surface type: %s. Supported surface types include: [%s, %s, %s]",
-                        renderSurfaceType, RENDER_SURFACE_TYPE_TEXTUREVIEW,
-                        RENDER_SURFACE_TYPE_SURFACEVIEW,
-                        RENDER_SURFACE_TYPE_SURFACEVIEW_NONBLOCKING
-                    )
-                )
-            }
-        }
     }
 }
