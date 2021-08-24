@@ -10,3 +10,4 @@ rootProject.name = "OpenGLCameraXExample"
 include ':app'
 include ':ypreview'
 include ':appasjava'
+include ':ypreviewjava'
