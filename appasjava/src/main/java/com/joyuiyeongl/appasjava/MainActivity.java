@@ -12,7 +12,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 import androidx.lifecycle.LifecycleOwner;
 
-import com.joyuiyeongl.ypreview.CustomPreview;
+import com.joyuiyeongl.ypreviewjava.CustomPreview;
 
 import java.util.Map;
 import java.util.Objects;

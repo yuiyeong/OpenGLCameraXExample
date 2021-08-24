@@ -272,16 +272,8 @@ namespace {
 
 extern "C" {
 
-JNIEXPORT jstring JNICALL
-Java_com_joyuiyeongl_ypreview_OpenGLRenderer_stringFromJNI(
-        JNIEnv* env,
-        jobject /* this */) {
-    std::string hello = "Hello from C++";
-    return env->NewStringUTF(hello.c_str());
-}
-
 JNIEXPORT jlong JNICALL
-Java_com_joyuiyeongl_ypreview_OpenGLRenderer_initContext(
+Java_com_joyuiyeongl_ypreviewjava_OpenGLRenderer_initContext(
         JNIEnv *env, jclass clazz) {
     EGLDisplay eglDisplay = eglGetDisplay(EGL_DEFAULT_DISPLAY);
     assert(eglDisplay != EGL_NO_DISPLAY);
@@ -381,7 +373,7 @@ Java_com_joyuiyeongl_ypreview_OpenGLRenderer_initContext(
 }
 
 JNIEXPORT jboolean JNICALL
-Java_com_joyuiyeongl_ypreview_OpenGLRenderer_setWindowSurface(
+Java_com_joyuiyeongl_ypreviewjava_OpenGLRenderer_setWindowSurface(
         JNIEnv *env, jclass clazz, jlong context, jobject jsurface) {
     auto *nativeContext = reinterpret_cast<NativeContext *>(context);
 
@@ -419,14 +411,14 @@ Java_com_joyuiyeongl_ypreview_OpenGLRenderer_setWindowSurface(
 }
 
 JNIEXPORT jint JNICALL
-Java_com_joyuiyeongl_ypreview_OpenGLRenderer_getTexName(
+Java_com_joyuiyeongl_ypreviewjava_OpenGLRenderer_getTexName(
         JNIEnv *env, jclass clazz, jlong context) {
     auto *nativeContext = reinterpret_cast<NativeContext *>(context);
     return nativeContext->textureId;
 }
 
 JNIEXPORT jboolean JNICALL
-Java_com_joyuiyeongl_ypreview_OpenGLRenderer_renderTexture(
+Java_com_joyuiyeongl_ypreviewjava_OpenGLRenderer_renderTexture(
         JNIEnv *env, jclass clazz, jlong context, jlong timestampNs,
         jfloatArray jmvpTransformArray, jboolean mvpDirty,jfloatArray jtexTransformArray) {
     auto *nativeContext = reinterpret_cast<NativeContext *>(context);
@@ -542,7 +534,7 @@ Java_com_joyuiyeongl_ypreview_OpenGLRenderer_renderTexture(
 }
 
 JNIEXPORT void JNICALL
-Java_com_joyuiyeongl_ypreview_OpenGLRenderer_closeContext(
+Java_com_joyuiyeongl_ypreviewjava_OpenGLRenderer_closeContext(
         JNIEnv *env, jclass clazz, jlong context) {
     auto *nativeContext = reinterpret_cast<NativeContext *>(context);
 
