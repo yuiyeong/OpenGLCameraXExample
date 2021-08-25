@@ -160,9 +160,8 @@ namespace {
         GLint texTransformHandle;
         GLuint textureId;
 
-        NativeContext(EGLDisplay display, EGLConfig config, EGLContext context,
-                      ANativeWindow *window, EGLSurface surface,
-                      EGLSurface pbufferSurface)
+        NativeContext(EGLDisplay display, EGLConfig config, EGLContext context, ANativeWindow *window,
+                      EGLSurface surface, EGLSurface pbufferSurface)
                 : display(display),
                   config(config),
                   context(context),
@@ -273,8 +272,7 @@ namespace {
 extern "C" {
 
 JNIEXPORT jlong JNICALL
-Java_com_joyuiyeongl_ypreviewjava_OpenGLRenderer_initContext(
-        JNIEnv *env, jclass clazz) {
+Java_com_joyuiyeongl_ypreviewjava_OpenGLRenderer_initContext(JNIEnv *env, jclass clazz) {
     EGLDisplay eglDisplay = eglGetDisplay(EGL_DEFAULT_DISPLAY);
     assert(eglDisplay != EGL_NO_DISPLAY);
 
@@ -282,8 +280,7 @@ Java_com_joyuiyeongl_ypreviewjava_OpenGLRenderer_initContext(
     EGLint minorVer;
     EGLBoolean initSuccess = eglInitialize(eglDisplay, &majorVer, &minorVer);
     if (initSuccess != EGL_TRUE) {
-        ThrowException(env, "java/lang/RuntimeException",
-                       "EGL Error: eglInitialize failed.");
+        ThrowException(env, "java/lang/RuntimeException", "EGL Error: eglInitialize failed.");
         return 0;
     }
 
@@ -305,25 +302,21 @@ Java_com_joyuiyeongl_ypreviewjava_OpenGLRenderer_initContext(
     EGLConfig config;
     EGLint numConfigs;
     EGLint configSize = 1;
-    EGLBoolean chooseConfigSuccess =
-            eglChooseConfig(eglDisplay, static_cast<EGLint *>(configAttribs), &config,
-                            configSize, &numConfigs);
+    EGLBoolean chooseConfigSuccess = eglChooseConfig(eglDisplay, static_cast<EGLint *>(configAttribs), &config,
+                                                     configSize, &numConfigs);
     if (chooseConfigSuccess != EGL_TRUE) {
-        ThrowException(env, "java/lang/IllegalArgumentException",
-                       "EGL Error: eglChooseConfig failed. ");
+        ThrowException(env, "java/lang/IllegalArgumentException", "EGL Error: eglChooseConfig failed. ");
         return 0;
     }
     assert(numConfigs > 0);
 
     int contextAttribs[] = {EGL_CONTEXT_CLIENT_VERSION, 2, EGL_NONE};
-    EGLContext eglContext = eglCreateContext(
-            eglDisplay, config, EGL_NO_CONTEXT, static_cast<EGLint *>(contextAttribs));
+    EGLContext eglContext = eglCreateContext(eglDisplay, config, EGL_NO_CONTEXT, static_cast<EGLint *>(contextAttribs));
     assert(eglContext != EGL_NO_CONTEXT);
 
     // Create 1x1 pixmap to use as a surface until one is set.
     int pbufferAttribs[] = {EGL_WIDTH, 1, EGL_HEIGHT, 1, EGL_NONE};
-    EGLSurface eglPbuffer =
-            eglCreatePbufferSurface(eglDisplay, config, pbufferAttribs);
+    EGLSurface eglPbuffer = eglCreatePbufferSurface(eglDisplay, config, pbufferAttribs);
     assert(eglPbuffer != EGL_NO_SURFACE);
 
     eglMakeCurrent(eglDisplay, eglPbuffer, eglPbuffer, eglContext);
@@ -340,31 +333,25 @@ Java_com_joyuiyeongl_ypreviewjava_OpenGLRenderer_initContext(
                         glslVersionString == nullptr ? "Unknown" : (const char *) glslVersionString,
                         glRendererString == nullptr ? "Unknown" : (const char *) glRendererString);
 
-    auto *nativeContext =
-            new NativeContext(eglDisplay, config, eglContext, /*window=*/nullptr,
-                    /*surface=*/nullptr, eglPbuffer);
+    auto *nativeContext = new NativeContext(eglDisplay, config, eglContext, /*window=*/nullptr,   /*surface=*/nullptr,
+                                            eglPbuffer);
 
     nativeContext->program = CreateGlProgram();
     assert(nativeContext->program);
 
-    nativeContext->positionHandle =
-            CHECK_GL(glGetAttribLocation(nativeContext->program, "position"));
+    nativeContext->positionHandle = CHECK_GL(glGetAttribLocation(nativeContext->program, "position"));
     assert(nativeContext->positionHandle != -1);
 
-    nativeContext->texCoordsHandle =
-            CHECK_GL(glGetAttribLocation(nativeContext->program, "texCoords"));
+    nativeContext->texCoordsHandle = CHECK_GL(glGetAttribLocation(nativeContext->program, "texCoords"));
     assert(nativeContext->texCoordsHandle != -1);
 
-    nativeContext->samplerHandle =
-            CHECK_GL(glGetUniformLocation(nativeContext->program, "sampler"));
+    nativeContext->samplerHandle = CHECK_GL(glGetUniformLocation(nativeContext->program, "sampler"));
     assert(nativeContext->samplerHandle != -1);
 
-    nativeContext->mvpTransformHandle =
-            CHECK_GL(glGetUniformLocation(nativeContext->program, "mvpTransform"));
+    nativeContext->mvpTransformHandle = CHECK_GL(glGetUniformLocation(nativeContext->program, "mvpTransform"));
     assert(nativeContext->mvpTransformHandle != -1);
 
-    nativeContext->texTransformHandle =
-            CHECK_GL(glGetUniformLocation(nativeContext->program, "texTransform"));
+    nativeContext->texTransformHandle = CHECK_GL(glGetUniformLocation(nativeContext->program, "texTransform"));
     assert(nativeContext->texTransformHandle != -1);
 
     CHECK_GL(glGenTextures(1, &(nativeContext->textureId)));
@@ -373,8 +360,8 @@ Java_com_joyuiyeongl_ypreviewjava_OpenGLRenderer_initContext(
 }
 
 JNIEXPORT jboolean JNICALL
-Java_com_joyuiyeongl_ypreviewjava_OpenGLRenderer_setWindowSurface(
-        JNIEnv *env, jclass clazz, jlong context, jobject jsurface) {
+Java_com_joyuiyeongl_ypreviewjava_OpenGLRenderer_setWindowSurface(JNIEnv *env, jclass clazz, jlong context,
+                                                                  jobject jsurface) {
     auto *nativeContext = reinterpret_cast<NativeContext *>(context);
 
     // Destroy previously connected surface
@@ -402,25 +389,23 @@ Java_com_joyuiyeongl_ypreviewjava_OpenGLRenderer_setWindowSurface(
     eglMakeCurrent(nativeContext->display, surface, surface,
                    nativeContext->context);
 
-    CHECK_GL(glViewport(0, 0, ANativeWindow_getWidth(nativeWindow),
-                        ANativeWindow_getHeight(nativeWindow)));
-    CHECK_GL(glScissor(0, 0, ANativeWindow_getWidth(nativeWindow),
-                       ANativeWindow_getHeight(nativeWindow)));
+    CHECK_GL(glViewport(0, 0, ANativeWindow_getWidth(nativeWindow), ANativeWindow_getHeight(nativeWindow)));
+    CHECK_GL(glScissor(0, 0, ANativeWindow_getWidth(nativeWindow), ANativeWindow_getHeight(nativeWindow)));
 
     return JNI_TRUE;
 }
 
 JNIEXPORT jint JNICALL
-Java_com_joyuiyeongl_ypreviewjava_OpenGLRenderer_getTexName(
-        JNIEnv *env, jclass clazz, jlong context) {
+Java_com_joyuiyeongl_ypreviewjava_OpenGLRenderer_getTexName(JNIEnv *env, jclass clazz, jlong context) {
     auto *nativeContext = reinterpret_cast<NativeContext *>(context);
     return nativeContext->textureId;
 }
 
 JNIEXPORT jboolean JNICALL
-Java_com_joyuiyeongl_ypreviewjava_OpenGLRenderer_renderTexture(
-        JNIEnv *env, jclass clazz, jlong context, jlong timestampNs,
-        jfloatArray jmvpTransformArray, jboolean mvpDirty,jfloatArray jtexTransformArray) {
+Java_com_joyuiyeongl_ypreviewjava_OpenGLRenderer_renderTexture(JNIEnv *env, jclass clazz, jlong context,
+                                                               jlong timestampNs,
+                                                               jfloatArray jmvpTransformArray, jboolean mvpDirty,
+                                                               jfloatArray jtexTransformArray) {
     auto *nativeContext = reinterpret_cast<NativeContext *>(context);
 
     // We use two triangles drawn with GL_TRIANGLE_STRIP to create the surface which will be
@@ -438,8 +423,8 @@ Java_com_joyuiyeongl_ypreviewjava_OpenGLRenderer_renderTexture(
     //                          +---------------+
     //                       (-1,1)           (1,1)
     constexpr GLfloat vertices[] = {
-            -1.0f,  1.0f, // Lower-left
-            1.0f,  1.0f, // Lower-right
+            -1.0f, 1.0f, // Lower-left
+            1.0f, 1.0f, // Lower-right
             -1.0f, -1.0f, // Upper-left (notice order here. We're drawing triangles, not a quad.)
             1.0f, -1.0f  // Upper-right
     };
@@ -454,40 +439,31 @@ Java_com_joyuiyeongl_ypreviewjava_OpenGLRenderer_renderTexture(
     GLenum vertexType = GL_FLOAT;
     GLboolean normalized = GL_FALSE;
     GLsizei vertexStride = 0;
-    CHECK_GL(glVertexAttribPointer(nativeContext->positionHandle,
-                                   vertexComponents, vertexType, normalized,
-                                   vertexStride, vertices));
+    CHECK_GL(
+            glVertexAttribPointer(nativeContext->positionHandle, vertexComponents, vertexType, normalized, vertexStride,
+                                  vertices));
     CHECK_GL(glEnableVertexAttribArray(nativeContext->positionHandle));
-
-    CHECK_GL(glVertexAttribPointer(nativeContext->texCoordsHandle,
-                                   vertexComponents, vertexType, normalized,
+    CHECK_GL(glVertexAttribPointer(nativeContext->texCoordsHandle, vertexComponents, vertexType, normalized,
                                    vertexStride, texCoords));
     CHECK_GL(glEnableVertexAttribArray(nativeContext->texCoordsHandle));
-
     CHECK_GL(glUseProgram(nativeContext->program));
 
     GLsizei numMatrices = 1;
     GLboolean transpose = GL_FALSE;
     // Only re-upload MVP to GPU if it is dirty
     if (mvpDirty) {
-        GLfloat *mvpTransformArray =
-                env->GetFloatArrayElements(jmvpTransformArray, nullptr);
-        CHECK_GL(glUniformMatrix4fv(nativeContext->mvpTransformHandle, numMatrices,
-                                    transpose, mvpTransformArray));
-        env->ReleaseFloatArrayElements(jmvpTransformArray, mvpTransformArray,
-                                       JNI_ABORT);
+        GLfloat *mvpTransformArray = env->GetFloatArrayElements(jmvpTransformArray, nullptr);
+        CHECK_GL(glUniformMatrix4fv(nativeContext->mvpTransformHandle, numMatrices, transpose, mvpTransformArray));
+        env->ReleaseFloatArrayElements(jmvpTransformArray, mvpTransformArray, JNI_ABORT);
     }
 
     CHECK_GL(glUniform1i(nativeContext->samplerHandle, 0));
 
     numMatrices = 1;
     transpose = GL_FALSE;
-    GLfloat *texTransformArray =
-            env->GetFloatArrayElements(jtexTransformArray, nullptr);
-    CHECK_GL(glUniformMatrix4fv(nativeContext->texTransformHandle, numMatrices,
-                                transpose, texTransformArray));
-    env->ReleaseFloatArrayElements(jtexTransformArray, texTransformArray,
-                                   JNI_ABORT);
+    GLfloat *texTransformArray = env->GetFloatArrayElements(jtexTransformArray, nullptr);
+    CHECK_GL(glUniformMatrix4fv(nativeContext->texTransformHandle, numMatrices, transpose, texTransformArray));
+    env->ReleaseFloatArrayElements(jtexTransformArray, texTransformArray, JNI_ABORT);
 
     CHECK_GL(glBindTexture(GL_TEXTURE_EXTERNAL_OES, nativeContext->textureId));
 
@@ -508,8 +484,7 @@ Java_com_joyuiyeongl_ypreviewjava_OpenGLRenderer_renderTexture(
     // Check that all GL operations completed successfully. If not, log an error and return.
     GLenum glError = glGetError();
     if (glError != GL_NO_ERROR) {
-        __android_log_print(ANDROID_LOG_ERROR, LOG_TAG,
-                            "Failed to draw frame due to OpenGL error: %s",
+        __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, "Failed to draw frame due to OpenGL error: %s",
                             GLErrorString(glError).c_str());
         return JNI_FALSE;
     }
@@ -524,8 +499,7 @@ Java_com_joyuiyeongl_ypreviewjava_OpenGLRenderer_renderTexture(
                                         nativeContext->windowSurface.second);
     if (!swapped) {
         EGLenum eglError = eglGetError();
-        __android_log_print(ANDROID_LOG_ERROR, LOG_TAG,
-                            "Failed to swap buffers with EGL error: %s",
+        __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, "Failed to swap buffers with EGL error: %s",
                             EGLErrorString(eglError).c_str());
         return JNI_FALSE;
     }
@@ -534,8 +508,7 @@ Java_com_joyuiyeongl_ypreviewjava_OpenGLRenderer_renderTexture(
 }
 
 JNIEXPORT void JNICALL
-Java_com_joyuiyeongl_ypreviewjava_OpenGLRenderer_closeContext(
-        JNIEnv *env, jclass clazz, jlong context) {
+Java_com_joyuiyeongl_ypreviewjava_OpenGLRenderer_closeContext(JNIEnv *env, jclass clazz, jlong context) {
     auto *nativeContext = reinterpret_cast<NativeContext *>(context);
 
     if (nativeContext->program) {
