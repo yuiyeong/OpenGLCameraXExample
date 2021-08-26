@@ -2,34 +2,35 @@ package com.joyuiyeongl.appasjava;
 
 import android.Manifest;
 import android.content.pm.PackageManager;
+import android.content.res.Configuration;
 import android.os.Bundle;
 import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultCallback;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
-import androidx.lifecycle.LifecycleOwner;
 
-import com.joyuiyeongl.ypreviewjava.CustomPreview;
+import com.joyuiyeongl.ypreviewjava.PreviewView;
 
 import java.util.Map;
 import java.util.Objects;
 
 public class MainActivity extends AppCompatActivity {
     private static final String[] REQUIRED_PERMISSIONS = new String[]{Manifest.permission.CAMERA};
-    private CustomPreview customPreview;
+    private PreviewView.Binder binder;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        customPreview = findViewById(R.id.customPreview);
+        PreviewView previewView = findViewById(R.id.previewView);
+        binder = new PreviewView.Binder(previewView, this);
 
         if (allPermissionsGranted()) {
-            customPreview.bind((LifecycleOwner) this);
-            customPreview.startCamera();
+            binder.setUpCamera();
         } else {
             mRequestPermissions.launch(REQUIRED_PERMISSIONS);
         }
@@ -56,9 +57,14 @@ public class MainActivity extends AppCompatActivity {
                         }
                     }
 
-                    customPreview.bind((LifecycleOwner) MainActivity.this, false);
-                    customPreview.startCamera();
+                    binder.setUpCamera();
                 }
             }
     );
+
+    @Override
+    public void onConfigurationChanged(@NonNull Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        binder.rebind();
+    }
 }

@@ -15,6 +15,7 @@
  */
 package com.joyuiyeongl.ypreviewjava;
 
+import android.annotation.SuppressLint;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.SurfaceTexture;
@@ -83,8 +84,8 @@ final class OpenGLRenderer {
     private static final float[] DIRECTION_UP_ROT_90 = {1f, 0f, 0f, 0f};
     private static final float[] DIRECTION_UP_ROT_180 = {0f, 1f, 0f, 0f};
     private static final float[] DIRECTION_UP_ROT_270 = {-1f, 0f, 0f, 0f};
-    private float[] mTempVec = new float[4];
-    private float[] mTempMatrix = new float[32]; // 2 concatenated matrices for calculations
+    private final float[] mTempVec = new float[4];
+    private final float[] mTempMatrix = new float[32]; // 2 concatenated matrices for calculations
 
     private long mNativeContext = 0;
 
@@ -105,78 +106,68 @@ final class OpenGLRenderer {
      * @return A {@link ListenableFuture} that signals the new surface is ready to be used in the
      * renderer for the input Preview use-case.
      */
+    @SuppressLint("UnsafeOptInUsageError")
     @MainThread
     @SuppressWarnings("ObjectToString")
     @NonNull
     ListenableFuture<Void> attachInputPreview(@NonNull Preview preview) {
         return CallbackToFutureAdapter.getFuture(completer -> {
-            preview.setSurfaceProvider(
-                    mExecutor,
-                    surfaceRequest -> {
-                        if (mIsShutdown) {
-                            surfaceRequest.willNotProvideSurface();
-                            return;
-                        }
-                        SurfaceTexture surfaceTexture = resetPreviewTexture(
-                                surfaceRequest.getResolution());
-                        Surface inputSurface = new Surface(surfaceTexture);
-                        mNumOutstandingSurfaces++;
+            preview.setSurfaceProvider(mExecutor, surfaceRequest -> {
+                if (mIsShutdown) {
+                    surfaceRequest.willNotProvideSurface();
+                    return;
+                }
 
-                        surfaceRequest.setTransformationInfoListener(
-                                mExecutor,
-                                transformationInfo -> {
-                                    mMvpDirty = true;
-                                    if (!isCropRectFullTexture(transformationInfo.getCropRect())) {
-                                        // Crop rect is pre-calculated. Use it directly.
-                                        mPreviewCropRect = new RectF(
-                                                transformationInfo.getCropRect());
-                                    } else {
-                                        // Crop rect needs to be calculated before drawing.
-                                        mPreviewCropRect = null;
-                                    }
-                                });
+                SurfaceTexture surfaceTexture = resetPreviewTexture(surfaceRequest.getResolution());
+                Surface inputSurface = new Surface(surfaceTexture);
+                mNumOutstandingSurfaces++;
 
-                        surfaceRequest.provideSurface(
-                                inputSurface,
-                                mExecutor,
-                                result -> {
-                                    inputSurface.release();
-                                    surfaceTexture.release();
-                                    if (surfaceTexture == mPreviewTexture) {
-                                        mPreviewTexture = null;
-                                    }
-                                    mNumOutstandingSurfaces--;
-                                    doShutdownExecutorIfNeeded();
-                                });
-                        // Make sure the renderer use the new surface for the input Preview.
-                        completer.set(null);
+                surfaceRequest.setTransformationInfoListener(mExecutor, transformationInfo -> {
+                    mMvpDirty = true;
+                    if (!isCropRectFullTexture(transformationInfo.getCropRect())) {
+                        // Crop rect is pre-calculated. Use it directly.
+                        mPreviewCropRect = new RectF(transformationInfo.getCropRect());
+                    } else {
+                        // Crop rect needs to be calculated before drawing.
+                        mPreviewCropRect = null;
+                    }
+                });
 
-                    });
+                surfaceRequest.provideSurface(inputSurface, mExecutor, result -> {
+                    inputSurface.release();
+                    surfaceTexture.release();
+                    if (surfaceTexture == mPreviewTexture) {
+                        mPreviewTexture = null;
+                    }
+                    mNumOutstandingSurfaces--;
+                    doShutdownExecutorIfNeeded();
+                });
+                // Make sure the renderer use the new surface for the input Preview.
+                completer.set(null);
+
+            });
             return "attachInputPreview [" + this + "]";
         });
     }
 
-    void attachOutputSurface(
-            @NonNull Surface surface, @NonNull Size surfaceSize, int surfaceRotationDegrees) {
+    void attachOutputSurface(@NonNull Surface surface, @NonNull Size surfaceSize, int surfaceRotationDegrees) {
         try {
-            mExecutor.execute(
-                    () -> {
-                        if (mIsShutdown) {
-                            return;
-                        }
+            mExecutor.execute(() -> {
+                if (mIsShutdown) {
+                    return;
+                }
 
-                        if (setWindowSurface(mNativeContext, surface)) {
-                            if (surfaceRotationDegrees != mSurfaceRotationDegrees
-                                    || !Objects.equals(surfaceSize, mSurfaceSize)) {
-                                mMvpDirty = true;
-                            }
-                            mSurfaceRotationDegrees = surfaceRotationDegrees;
-                            mSurfaceSize = surfaceSize;
-                        } else {
-                            mSurfaceSize = null;
-                        }
-
-                    });
+                if (setWindowSurface(mNativeContext, surface)) {
+                    if (surfaceRotationDegrees != mSurfaceRotationDegrees
+                            || !Objects.equals(surfaceSize, mSurfaceSize)) {
+                        mMvpDirty = true;
+                    }
+                    mSurfaceRotationDegrees = surfaceRotationDegrees;
+                    mSurfaceSize = surfaceSize;
+                } else {
+                    mSurfaceSize = null;
+                }
+            });
         } catch (RejectedExecutionException e) {
             // Renderer is shutting down. Ignore.
         }
@@ -209,16 +200,15 @@ final class OpenGLRenderer {
 
     void invalidateSurface(int surfaceRotationDegrees) {
         try {
-            mExecutor.execute(
-                    () -> {
-                        if (surfaceRotationDegrees != mSurfaceRotationDegrees) {
-                            mMvpDirty = true;
-                        }
-                        mSurfaceRotationDegrees = surfaceRotationDegrees;
-                        if (mPreviewTexture != null && !mIsShutdown) {
-                            renderLatest();
-                        }
-                    });
+            mExecutor.execute(() -> {
+                if (surfaceRotationDegrees != mSurfaceRotationDegrees) {
+                    mMvpDirty = true;
+                }
+                mSurfaceRotationDegrees = surfaceRotationDegrees;
+                if (mPreviewTexture != null && !mIsShutdown) {
+                    renderLatest();
+                }
+            });
         } catch (RejectedExecutionException e) {
             // Renderer is shutting down. Ignore.
         }
@@ -236,14 +226,13 @@ final class OpenGLRenderer {
     ListenableFuture<Void> detachOutputSurface() {
         return CallbackToFutureAdapter.getFuture(completer -> {
             try {
-                mExecutor.execute(
-                        () -> {
-                            if (!mIsShutdown) {
-                                setWindowSurface(mNativeContext, null);
-                                mSurfaceSize = null;
-                            }
-                            completer.set(null);
-                        });
+                mExecutor.execute(() -> {
+                    if (!mIsShutdown) {
+                        setWindowSurface(mNativeContext, null);
+                        mSurfaceSize = null;
+                    }
+                    completer.set(null);
+                });
             } catch (RejectedExecutionException e) {
                 // Renderer is shutting down. Can notify that the surface is detached.
                 completer.set(null);
@@ -254,15 +243,14 @@ final class OpenGLRenderer {
 
     void shutdown() {
         try {
-            mExecutor.execute(
-                    () -> {
-                        if (!mIsShutdown) {
-                            closeContext(mNativeContext);
-                            mNativeContext = 0;
-                            mIsShutdown = true;
-                        }
-                        doShutdownExecutorIfNeeded();
-                    });
+            mExecutor.execute(() -> {
+                if (!mIsShutdown) {
+                    closeContext(mNativeContext);
+                    mNativeContext = 0;
+                    mIsShutdown = true;
+                }
+                doShutdownExecutorIfNeeded();
+            });
         } catch (RejectedExecutionException e) {
             // Renderer already shutting down. Ignore.
         }
@@ -285,14 +273,12 @@ final class OpenGLRenderer {
 
         mPreviewTexture = new SurfaceTexture(getTexName(mNativeContext));
         mPreviewTexture.setDefaultBufferSize(size.getWidth(), size.getHeight());
-        mPreviewTexture.setOnFrameAvailableListener(
-                surfaceTexture -> {
-                    if (surfaceTexture == mPreviewTexture && !mIsShutdown) {
-                        surfaceTexture.updateTexImage();
-                        renderLatest();
-                    }
-                },
-                mExecutor.getHandler());
+        mPreviewTexture.setOnFrameAvailableListener(surfaceTexture -> {
+            if (surfaceTexture == mPreviewTexture && !mIsShutdown) {
+                surfaceTexture.updateTexImage();
+                renderLatest();
+            }
+        }, mExecutor.getHandler());
         if (!Objects.equals(size, mPreviewSize)) {
             mMvpDirty = true;
         }
@@ -318,8 +304,7 @@ final class OpenGLRenderer {
             if (mMvpDirty) {
                 updateMvpTransform();
             }
-            boolean success = renderTexture(mNativeContext, timestampNs, mMvpTransform, mMvpDirty,
-                    mTextureTransform);
+            boolean success = renderTexture(mNativeContext, timestampNs, mMvpTransform, mMvpDirty, mTextureTransform);
             mMvpDirty = false;
             if (success && mFrameUpdateListener != null) {
                 Executor executor = Objects.requireNonNull(mFrameUpdateListener.first);
