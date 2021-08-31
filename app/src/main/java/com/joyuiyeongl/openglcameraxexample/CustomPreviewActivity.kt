@@ -8,20 +8,16 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import com.joyuiyeongl.openglcameraxexample.databinding.ActivityCustomPreviewBinding
-import com.joyuiyeongl.ypreviewjava.Binder
-import com.joyuiyeongl.ypreviewjava.PreviewView
 
 class CustomPreviewActivity : AppCompatActivity() {
     private val binding: ActivityCustomPreviewBinding by lazy { ActivityCustomPreviewBinding.inflate(layoutInflater) }
-    private var binder: Binder? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(binding.root)
-        binder = Binder(binding.previewView, this)
 
         if (allPermissionsGranted()) {
-            binder?.setUpCamera()
+            startCamera()
         } else {
             mRequestPermissions.launch(REQUIRED_PERMISSIONS)
         }
@@ -40,7 +36,11 @@ class CustomPreviewActivity : AppCompatActivity() {
         }
 
         // All permissions granted.
-        binder?.setUpCamera()
+        startCamera()
+    }
+
+    private fun startCamera() {
+        // TODO implement it.
     }
 
     private fun allPermissionsGranted(): Boolean {
