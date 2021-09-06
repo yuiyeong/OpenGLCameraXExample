@@ -143,9 +143,9 @@ public class Binder implements LifecycleObserver {
      */
     private void setUpLensFacing() {
         if (hasFrontCamera()) {
-            lensFacing = CameraSelector.LENS_FACING_FRONT;
-        } else if (hasBackCamera()) {
             lensFacing = CameraSelector.LENS_FACING_BACK;
+        } else if (hasBackCamera()) {
+            lensFacing = CameraSelector.LENS_FACING_FRONT;
         } else {
             throw new IllegalStateException("Back and front camera are unavailable");
         }

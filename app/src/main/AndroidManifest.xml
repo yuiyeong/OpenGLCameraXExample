@@ -14,8 +14,14 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.OpenGLCameraXExample">
         <activity
+            android:name=".CustomPreviewViewActivity"
+            android:exported="true" >
+
+        </activity>
+        <activity
             android:name=".CustomPreviewActivity"
             android:exported="true">
+
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

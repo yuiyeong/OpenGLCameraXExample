@@ -114,11 +114,13 @@ final class OpenGLRenderer {
         return CallbackToFutureAdapter.getFuture(completer -> {
             preview.setSurfaceProvider(mExecutor, surfaceRequest -> {
                 if (mIsShutdown) {
+                    Log.e(TAG, "    attachInputPreview.setSurfaceProvider, mIsShutdown is true");
                     surfaceRequest.willNotProvideSurface();
                     return;
                 }
 
                 SurfaceTexture surfaceTexture = resetPreviewTexture(surfaceRequest.getResolution());
+                Log.e(TAG, "    attachInputPreview.setSurfaceProvider, resetPreviewTexture");
                 Surface inputSurface = new Surface(surfaceTexture);
                 mNumOutstandingSurfaces++;
 
@@ -134,6 +136,7 @@ final class OpenGLRenderer {
                 });
 
                 surfaceRequest.provideSurface(inputSurface, mExecutor, result -> {
+                    Log.e(TAG, "    attachInputPreview.setSurfaceProvider, provideSurface, onResult");
                     inputSurface.release();
                     surfaceTexture.release();
                     if (surfaceTexture == mPreviewTexture) {
@@ -154,12 +157,13 @@ final class OpenGLRenderer {
         try {
             mExecutor.execute(() -> {
                 if (mIsShutdown) {
+                    Log.e(TAG, "    attachOutputSurface, mIsShutdown is true");
                     return;
                 }
 
                 if (setWindowSurface(mNativeContext, surface)) {
-                    if (surfaceRotationDegrees != mSurfaceRotationDegrees
-                            || !Objects.equals(surfaceSize, mSurfaceSize)) {
+                    Log.e(TAG, "    attachOutputSurface, setWindowSurface is true");
+                    if (surfaceRotationDegrees != mSurfaceRotationDegrees  || !Objects.equals(surfaceSize, mSurfaceSize)) {
                         mMvpDirty = true;
                     }
                     mSurfaceRotationDegrees = surfaceRotationDegrees;
@@ -201,6 +205,7 @@ final class OpenGLRenderer {
     void invalidateSurface(int surfaceRotationDegrees) {
         try {
             mExecutor.execute(() -> {
+                Log.e(TAG, "    invalidateSurface, surfaceRotationDegrees: " + surfaceRotationDegrees);
                 if (surfaceRotationDegrees != mSurfaceRotationDegrees) {
                     mMvpDirty = true;
                 }
@@ -228,6 +233,7 @@ final class OpenGLRenderer {
             try {
                 mExecutor.execute(() -> {
                     if (!mIsShutdown) {
+                        Log.e(TAG, "    detachOutputSurface, not shutdown");
                         setWindowSurface(mNativeContext, null);
                         mSurfaceSize = null;
                     }
@@ -245,6 +251,7 @@ final class OpenGLRenderer {
         try {
             mExecutor.execute(() -> {
                 if (!mIsShutdown) {
+                    Log.e(TAG, "    shutdown");
                     closeContext(mNativeContext);
                     mNativeContext = 0;
                     mIsShutdown = true;
@@ -267,6 +274,7 @@ final class OpenGLRenderer {
     @WorkerThread
     @NonNull
     private SurfaceTexture resetPreviewTexture(@NonNull Size size) {
+        Log.e(TAG, "    resetPreviewTexture, size: " + size.getWidth() + " | " + size.getHeight());
         if (mPreviewTexture != null) {
             mPreviewTexture.detachFromGLContext();
         }

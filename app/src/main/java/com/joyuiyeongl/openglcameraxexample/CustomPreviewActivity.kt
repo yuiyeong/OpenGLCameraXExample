@@ -8,6 +8,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import com.joyuiyeongl.openglcameraxexample.databinding.ActivityCustomPreviewBinding
+import com.joyuiyeongl.ypreviewjava.Binder
 
 class CustomPreviewActivity : AppCompatActivity() {
     private val binding: ActivityCustomPreviewBinding by lazy { ActivityCustomPreviewBinding.inflate(layoutInflater) }
@@ -40,7 +41,7 @@ class CustomPreviewActivity : AppCompatActivity() {
     }
 
     private fun startCamera() {
-        // TODO implement it.
+        Binder(binding.preview, this).setUpCamera()
     }
 
     private fun allPermissionsGranted(): Boolean {
